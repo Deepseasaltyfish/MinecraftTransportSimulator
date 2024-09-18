@@ -70,6 +70,7 @@ public class EntityVehicleF_Physics extends AEntityVehicleE_Powered {
     public final ComputedVariable autopilotVerticalSpeed;
     private PIDController verticalSpeedController = new PIDController(0.2, 0.02, 0.01);
     private PIDController speedController = new PIDController(0.15, 0.0075, 0.0000015);
+    private PIDController cdiDeflectionController = new PIDController(20.0, 0.15, 0.15);
 
     //External state control.
     public boolean turningLeft;
@@ -597,37 +598,28 @@ public class EntityVehicleF_Physics extends AEntityVehicleE_Powered {
                 }
             }
         } else if (definition.motorized.isAircraft && autopilotValueVar.isActive) {
-//            switch ((int) autopilotValueVar.currentValue) {
-//                case 1:
-//                    autolevel();
-//                    break;
-//                case 2:
-//                    navGPS(new Point3D(0, 0, 0));
-//                    break;
-//                case 3:
-//                    setHeading();
-//                    break;
-//                case 4:
-//                    setAltitude();
-//                    break;
-//                case 5:
-//                    setVerticalSpeed();
-//            }
-
-            if (selectedBeacon != null) {
-                autopilotPositionX.setTo(selectedBeacon.position.x, true);
-                autopilotPositionZ.setTo(selectedBeacon.position.z, true);
-                System.out.println("Valid beacon");
-            } else {
-                autopilotPositionX.setTo(0, true);
-                autopilotPositionZ.setTo(0, true);
+            if (autopilotPositionX.isActive) {
+                navGPS();
+            } else if (autopilotHeading.isActive) {
+                setHeading();
+            } else if (autopilotAltitude.isActive) {
+                setAltitude();
+            } else if (autopilotSpeed.isActive) {
+                setSpeed();
+            } else if (autopilotVerticalSpeed.isActive) {
+                setVerticalSpeed();
             }
-            autopilotPositionY.setTo(100, true);
-            navGPS();
+//            if (selectedBeacon == null) {
+//                autopilotPositionX.setTo(0, true);
+//                autopilotPositionZ.setTo(0, true);
+//            }
+//            autopilotPositionY.setTo(100, true);
+//            navGPS();
 //            autopilotHeading.setTo(360, true);
 //            setHeading();
 //            autopilotVerticalSpeed.setTo(1, true);
 //            setVerticalSpeed();
+//            navILS();
         }
 
         //If we don't have controllers, reset control states to 0.
@@ -677,16 +669,36 @@ public class EntityVehicleF_Physics extends AEntityVehicleE_Powered {
 
     public void navGPS() {
 //        double heading = Math.toDegrees(Math.atan2(autopilotPositionZ.currentValue - position.z , autopilotPositionX.currentValue - position.x));
-
-        double heading = Math.toDegrees(Math.atan2(autopilotPositionX.currentValue - position.x, autopilotPositionZ.currentValue - position.z));
+        double heading;
+        if (selectedBeacon != null) {
+            heading = Math.toDegrees(Math.atan2(selectedBeacon.position.x - position.x, selectedBeacon.position.z - position.z));
+        } else {
+            heading = Math.toDegrees(Math.atan2(autopilotPositionX.currentValue - position.x, autopilotPositionZ.currentValue - position.z));
+        }
         if (ConfigSystem.client.controlSettings.north360.value)
             heading += 180;
-        heading = (heading + 360) %360;
+        heading = (heading + 360) % 360;
+        System.out.println(heading);
         autopilotHeading.setTo(heading, true);
         autopilotAltitude.setTo(autopilotPositionY.currentValue, true);
         System.out.println("Heading " + heading);
         setHeading();
         setAltitude();
+    }
+
+    public void navILS() {
+        if (selectedBeacon != null) {
+            double delta = selectedBeacon.getBearingDelta(this);
+            double output = cdiDeflectionController.loop(delta, 1);
+            if (output < -45) {
+                output = -45;
+            } else if (output > 45) {
+                output = 45;
+            }
+            double heading = output + selectedBeacon.bearing + 180;
+            autopilotHeading.setTo(heading, true);
+            setHeading();
+        }
     }
 
     public void setSpeed() {
