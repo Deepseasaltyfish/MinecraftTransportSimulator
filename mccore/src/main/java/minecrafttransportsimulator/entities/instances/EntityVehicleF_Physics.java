@@ -600,6 +600,8 @@ public class EntityVehicleF_Physics extends AEntityVehicleE_Powered {
         } else if (definition.motorized.isAircraft && autopilotValueVar.isActive) {
             if (autopilotPositionX.isActive) {
                 navGPS();
+            } else if (selectedBeacon != null) {
+                navILS();
             } else if (autopilotHeading.isActive) {
                 setHeading();
             } else if (autopilotAltitude.isActive) {
@@ -687,18 +689,16 @@ public class EntityVehicleF_Physics extends AEntityVehicleE_Powered {
     }
 
     public void navILS() {
-        if (selectedBeacon != null) {
-            double delta = selectedBeacon.getBearingDelta(this);
-            double output = cdiDeflectionController.loop(delta, 1);
-            if (output < -45) {
-                output = -45;
-            } else if (output > 45) {
-                output = 45;
-            }
-            double heading = output + selectedBeacon.bearing + 180;
-            autopilotHeading.setTo(heading, true);
-            setHeading();
+        double delta = selectedBeacon.getBearingDelta(this);
+        double output = cdiDeflectionController.loop(delta, 1);
+        if (output < -45) {
+            output = -45;
+        } else if (output > 45) {
+            output = 45;
         }
+        double heading = output + selectedBeacon.bearing + 180;
+        autopilotHeading.setTo(heading, true);
+        setHeading();
     }
 
     public void setSpeed() {
