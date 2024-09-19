@@ -68,9 +68,9 @@ public class EntityVehicleF_Physics extends AEntityVehicleE_Powered {
     public final ComputedVariable autopilotAltitude;
     public final ComputedVariable autopilotSpeed;
     public final ComputedVariable autopilotVerticalSpeed;
-    private PIDController verticalSpeedController = new PIDController(0.2, 0.02, 0.01);
-    private PIDController speedController = new PIDController(0.15, 0.0075, 0.0000015);
-    private PIDController cdiDeflectionController = new PIDController(20.0, 0.15, 0.15);
+    private PIDController verticalSpeedController = new PIDController(0.001, 0.000005, 0.01);
+    private PIDController speedController = new PIDController(0.15, 0.000375, 0.00003);
+    private PIDController cdiDeflectionController = new PIDController(4.5, 0.002, 0.0);
 
     //External state control.
     public boolean turningLeft;
