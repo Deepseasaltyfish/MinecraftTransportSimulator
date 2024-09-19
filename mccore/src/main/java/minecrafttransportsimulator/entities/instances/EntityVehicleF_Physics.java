@@ -600,15 +600,20 @@ public class EntityVehicleF_Physics extends AEntityVehicleE_Powered {
         } else if (definition.motorized.isAircraft && autopilotValueVar.isActive) {
             if (autopilotPositionX.isActive) {
                 navGPS();
-            } else if (selectedBeacon != null) {
+            }
+            if (selectedBeacon != null) {
                 navILS();
-            } else if (autopilotHeading.isActive) {
+            }
+            if (autopilotHeading.isActive) {
                 setHeading();
-            } else if (autopilotAltitude.isActive) {
+            }
+            if (autopilotAltitude.isActive) {
                 setAltitude();
-            } else if (autopilotSpeed.isActive) {
+            }
+            if (autopilotSpeed.isActive) {
                 setSpeed();
-            } else if (autopilotVerticalSpeed.isActive) {
+            }
+            if (autopilotVerticalSpeed.isActive) {
                 setVerticalSpeed();
             }
 //            if (selectedBeacon == null) {
@@ -680,12 +685,8 @@ public class EntityVehicleF_Physics extends AEntityVehicleE_Powered {
         if (ConfigSystem.client.controlSettings.north360.value)
             heading += 180;
         heading = (heading + 360) % 360;
-        System.out.println(heading);
         autopilotHeading.setTo(heading, true);
         autopilotAltitude.setTo(autopilotPositionY.currentValue, true);
-        System.out.println("Heading " + heading);
-        setHeading();
-        setAltitude();
     }
 
     public void navILS() {
@@ -698,7 +699,6 @@ public class EntityVehicleF_Physics extends AEntityVehicleE_Powered {
         }
         double heading = output + selectedBeacon.bearing + 180;
         autopilotHeading.setTo(heading, true);
-        setHeading();
     }
 
     public void setSpeed() {
@@ -748,7 +748,6 @@ public class EntityVehicleF_Physics extends AEntityVehicleE_Powered {
         }
         System.out.println("Altitude " + delta + " " + output);
         autopilotVerticalSpeed.setTo(output, true);
-        setVerticalSpeed();
     }
 
     public void setVerticalSpeed() {
