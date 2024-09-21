@@ -677,11 +677,7 @@ public class EntityVehicleF_Physics extends AEntityVehicleE_Powered {
     public void navGPS() {
 //        double heading = Math.toDegrees(Math.atan2(autopilotPositionZ.currentValue - position.z , autopilotPositionX.currentValue - position.x));
         double heading;
-        if (selectedBeacon != null) {
-            heading = Math.toDegrees(Math.atan2(selectedBeacon.position.x - position.x, selectedBeacon.position.z - position.z));
-        } else {
-            heading = Math.toDegrees(Math.atan2(autopilotPositionX.currentValue - position.x, autopilotPositionZ.currentValue - position.z));
-        }
+        heading = Math.toDegrees(Math.atan2(autopilotPositionX.currentValue - position.x, autopilotPositionZ.currentValue - position.z));
         if (ConfigSystem.client.controlSettings.north360.value)
             heading += 180;
         heading = (heading + 360) % 360;
@@ -709,8 +705,18 @@ public class EntityVehicleF_Physics extends AEntityVehicleE_Powered {
         } else if (output > 1) {
             output = 1;
         }
-        //TODO set up servo speed limit
-        throttleVar.setTo(output, true);
+        double signalDelta = output;
+        if (signalDelta > 0 && throttleVar.currentValue < MAX_THROTTLE) {
+            if (signalDelta > 0.0125) {
+                signalDelta = 0.0125;
+            }
+            throttleVar.adjustBy(signalDelta, true);
+        } else if (signalDelta < 0 && throttleVar.currentValue > -MAX_THROTTLE) {
+            if (signalDelta < -0.0125) {
+                signalDelta = -0.0125;
+            }
+            throttleVar.adjustBy(signalDelta, true);
+        }
     }
 
     public void setHeading() {
@@ -731,10 +737,19 @@ public class EntityVehicleF_Physics extends AEntityVehicleE_Powered {
             output = -45;
         }
         System.out.println("Heading " + delta + " " + output);
-        if (-orientation.angles.z - output > aileronTrimVar.currentValue + 0.1 && aileronTrimVar.currentValue < MAX_AILERON_TRIM) {
-            aileronTrimVar.adjustBy(0.75, true);
-        } else if (-orientation.angles.z - output < aileronTrimVar.currentValue - 0.1 && aileronTrimVar.currentValue > -MAX_AILERON_TRIM) {
-            aileronTrimVar.adjustBy(-0.75, true);
+//        This was the control before tranforming
+//        -orientation.angles.z - output > aileronTrimVar.currentValue + 0.1
+        double signalDelta = -orientation.angles.z - output - aileronTrimVar.currentValue - 0.1;
+        if (signalDelta > 0 && aileronTrimVar.currentValue < MAX_AILERON_TRIM) {
+            if (signalDelta > 0.75) {
+                signalDelta = 0.75;
+            }
+            aileronTrimVar.adjustBy(signalDelta, true);
+        } else if (signalDelta < 0 && aileronTrimVar.currentValue > -MAX_AILERON_TRIM) {
+            if (signalDelta < -0.75) {
+                signalDelta = -0.75;
+            }
+            aileronTrimVar.adjustBy(signalDelta, true);
         }
     }
 
@@ -759,10 +774,17 @@ public class EntityVehicleF_Physics extends AEntityVehicleE_Powered {
             output = 10;
         }
         System.out.println("Vertical speed " + delta + " " + output);
-        if (output > elevatorTrimVar.currentValue && elevatorTrimVar.currentValue < MAX_ELEVATOR_TRIM) {
-            elevatorTrimVar.adjustBy(0.75, true);
-        } else if (output < elevatorTrimVar.currentValue && elevatorTrimVar.currentValue > -MAX_ELEVATOR_TRIM) {
-            elevatorTrimVar.adjustBy(-0.75, true);
+        double signalDelta = output - elevatorTrimVar.currentValue;
+        if (signalDelta > 0 && elevatorTrimVar.currentValue < MAX_ELEVATOR_TRIM) {
+            if (signalDelta > 0.75) {
+                signalDelta = 0.75;
+            }
+            elevatorTrimVar.adjustBy(signalDelta, true);
+        } else if (signalDelta < 0 && elevatorTrimVar.currentValue > -MAX_ELEVATOR_TRIM) {
+            if (signalDelta < -0.75) {
+                signalDelta = -0.75;
+            }
+            elevatorTrimVar.adjustBy(signalDelta, true);
         }
     }
 
