@@ -603,6 +603,8 @@ public class EntityVehicleF_Physics extends AEntityVehicleE_Powered {
             }
             if (selectedBeacon != null) {
                 navILS();
+            } else {
+                cdiDeflectionController.clear();
             }
             if (autopilotHeading.isActive) {
                 setHeading();
@@ -612,9 +614,13 @@ public class EntityVehicleF_Physics extends AEntityVehicleE_Powered {
             }
             if (autopilotSpeed.isActive) {
                 setSpeed();
+            } else {
+                speedController.clear();
             }
             if (autopilotVerticalSpeed.isActive) {
                 setVerticalSpeed();
+            } else {
+                verticalSpeedController.clear();
             }
 //            if (selectedBeacon == null) {
 //                autopilotPositionX.setTo(0, true);
@@ -754,12 +760,18 @@ public class EntityVehicleF_Physics extends AEntityVehicleE_Powered {
     }
 
     public void setAltitude() {
+        if (!autopilotVerticalSpeed.isActive) {
+            if (-motion.y * 10 > elevatorTrimVar.currentValue + 1 && elevatorTrimVar.currentValue < MAX_ELEVATOR_TRIM) {
+                elevatorTrimVar.adjustBy(0.1, true);
+            } else if (-motion.y * 10 < elevatorTrimVar.currentValue - 1 && elevatorTrimVar.currentValue > -MAX_ELEVATOR_TRIM) {
+                elevatorTrimVar.adjustBy(-0.1, true);
+            }
+            return;
+        }
         double delta = autopilotAltitude.currentValue - (position.y - seaLevel);
         double output = delta * 0.50;
-        if (output < -2.5) {
-            output = -2.5;
-        } else if (output > 2.5) {
-            output = 2.5;
+        if ((delta > 0 && output < autopilotVerticalSpeed.currentValue) || (delta < 0 && output > autopilotVerticalSpeed.currentValue)) {
+            autopilotVerticalSpeed.setTo(output, true);
         }
         System.out.println("Altitude " + delta + " " + output);
         autopilotVerticalSpeed.setTo(output, true);

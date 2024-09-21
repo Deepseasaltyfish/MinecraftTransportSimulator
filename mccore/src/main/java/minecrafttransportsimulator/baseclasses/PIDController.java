@@ -19,4 +19,9 @@ public class PIDController {
         prevError = error;
         return kp * error + ki * integral + kd * derivative;
     }
+
+    public void clear() {
+        integral = 0;
+        prevError = 0;
+    }
 }
