@@ -13,6 +13,9 @@ import minecrafttransportsimulator.mcinterface.InterfaceManager;
 import minecrafttransportsimulator.packets.instances.*;
 
 import java.util.*;
+//TODO:Loop waypoint logic(drop a waypoint and switch to next one), although not all in this file
+// to get selectedWaypoint you can use:
+// NavWaypoint selectedWaypoint = vehicle.selectedWaypointList.get(Integer.parseInt(vehicle.selectedWaypointListIndex));
 
 public class GUIWaypointManager extends AGUIBase {
 
@@ -489,13 +492,18 @@ public class GUIWaypointManager extends AGUIBase {
         addComponent(V_DebugButton = new GUIComponentButton(this,guiLeft+225-15+80,guiTop + 50 + vehicleOffet,22+15,16,"Debug") {
             @Override
             public void onClicked(boolean leftSide) {
-                NavWaypoint selectedWaypoint = vehicle.selectedWaypointList.get(Integer.parseInt(vehicle.selectedWaypointListIndex));
-                if(selectedWaypoint!=null) {
-                    System.out.println(selectedWaypoint.name + " " + selectedWaypoint.index + " " + selectedWaypoint.position.x);
+//                try{
+//                    NavWaypoint selectedWaypoint = vehicle.selectedWaypointList.get(Integer.parseInt(vehicle.selectedWaypointListIndex));
+//                    if(selectedWaypoint!=null) {
+//                        System.out.println(selectedWaypoint.name + " " + selectedWaypoint.index + " " + selectedWaypoint.position.x);
+//
+//                    }else{
+//                        System.out.println("null");
+//                    }
+//                }catch (Exception e){
+//                    e.printStackTrace();
+//                }
 
-                }else{
-                    System.out.println("null");
-                }
                 System.out.println("vehicle.selectedWaypointIndex:"+vehicle.selectedWaypointIndex);
                 System.out.println("vehicle.selectedWaypointListIndex:"+vehicle.selectedWaypointListIndex);
                 System.out.println("vehicle.loopMode:"+vehicle.loopMode);
@@ -530,6 +538,7 @@ public class GUIWaypointManager extends AGUIBase {
         super.setStates();
         setStatesGlobal();
         if(vehicle != null)setStatesVehicle();
+        //TODO: update selectedWaypoint when it changes while GUI is on
     }
 
     /**
