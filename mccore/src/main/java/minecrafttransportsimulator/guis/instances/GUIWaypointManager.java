@@ -53,6 +53,9 @@ public class GUIWaypointManager extends AGUIBase {
     private GUIComponentButton V_PageDownButton;
     private GUIComponentButton V_addWaypointButton;
     private GUIComponentButton V_removeWaypointButton;
+    private GUIComponentButton V_selectAsTargetButton;
+    private GUIComponentButton V_loopModeButton;
+    private GUIComponentButton V_DebugButton;
     private final List<GUIComponentButton> V_waypointSelectionButtons = new ArrayList<>();
     private final List<GUIComponentTextBox> V_waypointNameList = new ArrayList<>();
     private final List<GUIComponentTextBox> V_waypointXList = new ArrayList<>();
@@ -62,6 +65,7 @@ public class GUIWaypointManager extends AGUIBase {
     //cache list should be shown
     private List<NavWaypoint> V_globalWaypointList;
     private NavWaypoint V_currentWaypoint;
+    //these indexes are not Waypoint internal index
     private int V_currentWaypointIndex = -1;
     //cache max index
     private int V_maxWaypointIndex;
@@ -78,6 +82,7 @@ public class GUIWaypointManager extends AGUIBase {
         this.world = player.getWorld();
         this.vehicle = vehicle;
         this.globalWaypoint = NavWaypoint.getAllWaypointsFromWorld(world);
+        //WARNING: things above might have not been initialised
     }
 
     /**
@@ -232,7 +237,6 @@ public class GUIWaypointManager extends AGUIBase {
                     globalWaypointList.remove(currentWaypointIndex);
                     if(globalWaypointList.size()<=currentWaypointIndex) {
                         disableAllTextBoxFocus();
-
                     };
                     updateCurrentWaypoint(-1);
                 }
@@ -320,7 +324,6 @@ public class GUIWaypointManager extends AGUIBase {
                     }
                     this.enabled = false;
                     V_updateCurrentWaypoint(finalpageIndex+V_scrollSpot);
-                    InterfaceManager.packetInterface.sendToServer(new PacketVehicleWaypointSelectRequest(vehicle, Integer.toString(finalpageIndex+V_scrollSpot)));
                 }
             };
             addComponent(button);
@@ -440,13 +443,66 @@ public class GUIWaypointManager extends AGUIBase {
                     V_globalWaypointList.remove(V_currentWaypointIndex);
                     if(V_globalWaypointList.size()<=V_currentWaypointIndex){
                         V_disableAllTextBoxFocus();
-
+                    }
+                    //if selectedWaypoint is removed, change its index to -1
+                    //update list one
+                    if(V_currentWaypointIndex < Integer.parseInt(vehicle.selectedWaypointListIndex)){
+                        InterfaceManager.packetInterface.sendToServer(new PacketVehicleWaypointSelect(vehicle,vehicle.selectedWaypointIndex, Integer.toString(Integer.parseInt(vehicle.selectedWaypointListIndex)-1), vehicle.loopMode));
+                        InterfaceManager.packetInterface.sendToServer(new PacketVehicleWaypointSelectRequest(vehicle,vehicle.selectedWaypointIndex,Integer.toString(Integer.parseInt(vehicle.selectedWaypointListIndex)-1),vehicle.loopMode));
+                    }
+                    //update both
+                    if(V_currentWaypointIndex == Integer.parseInt(vehicle.selectedWaypointListIndex)){
+                        InterfaceManager.packetInterface.sendToServer(new PacketVehicleWaypointSelect(vehicle,"-1","-1",vehicle.loopMode));
+                        InterfaceManager.packetInterface.sendToServer(new PacketVehicleWaypointSelectRequest(vehicle,"-1","-1",vehicle.loopMode));
                     }
                     V_updateCurrentWaypoint(-1);
-
                 }
             }
         });
+
+        addComponent(V_selectAsTargetButton = new GUIComponentButton(this,guiLeft+225-15+40,guiTop + 34 + vehicleOffet,22+15,16,"Choose") {
+            @Override
+            public void onClicked(boolean leftSide) {
+                if(V_currentWaypoint != null){
+                    String trueIndex = vehicle.selectedWaypointList.get(V_currentWaypointIndex).index;
+                    InterfaceManager.packetInterface.sendToServer(new PacketVehicleWaypointSelect(vehicle,trueIndex,Integer.toString(V_currentWaypointIndex),vehicle.loopMode));
+                    InterfaceManager.packetInterface.sendToServer(new PacketVehicleWaypointSelectRequest(vehicle,trueIndex,Integer.toString(V_currentWaypointIndex),vehicle.loopMode));
+                }
+            }
+        });
+
+        addComponent(V_loopModeButton = new GUIComponentButton(this,guiLeft+225-15+40,guiTop + 50 + vehicleOffet,22+15,16,vehicle.loopMode.equals("0")?"Loop":"Single") {
+            @Override
+            public void onClicked(boolean leftSide) {
+                if(vehicle.loopMode.equals("0")){
+                    InterfaceManager.packetInterface.sendToServer(new PacketVehicleWaypointSelect(vehicle,vehicle.selectedWaypointIndex, vehicle.selectedWaypointListIndex, "1"));
+                    InterfaceManager.packetInterface.sendToServer(new PacketVehicleWaypointSelectRequest(vehicle,vehicle.selectedWaypointIndex, vehicle.selectedWaypointListIndex,"1"));
+                    this.text = "Single";
+                }else if(vehicle.loopMode.equals("1")){
+                    InterfaceManager.packetInterface.sendToServer(new PacketVehicleWaypointSelect(vehicle,vehicle.selectedWaypointIndex, vehicle.selectedWaypointListIndex,"0"));
+                    InterfaceManager.packetInterface.sendToServer(new PacketVehicleWaypointSelectRequest(vehicle,vehicle.selectedWaypointIndex, vehicle.selectedWaypointListIndex,"0"));
+                    this.text = "Loop";
+                }
+            }
+        });
+
+        addComponent(V_DebugButton = new GUIComponentButton(this,guiLeft+225-15+80,guiTop + 50 + vehicleOffet,22+15,16,"Debug") {
+            @Override
+            public void onClicked(boolean leftSide) {
+                NavWaypoint selectedWaypoint = vehicle.selectedWaypointList.get(Integer.parseInt(vehicle.selectedWaypointListIndex));
+                if(selectedWaypoint!=null) {
+                    System.out.println(selectedWaypoint.name + " " + selectedWaypoint.index + " " + selectedWaypoint.position.x);
+
+                }else{
+                    System.out.println("null");
+                }
+                System.out.println("vehicle.selectedWaypointIndex:"+vehicle.selectedWaypointIndex);
+                System.out.println("vehicle.selectedWaypointListIndex:"+vehicle.selectedWaypointListIndex);
+                System.out.println("vehicle.loopMode:"+vehicle.loopMode);
+            }
+        });
+
+
     }
 
     @Override

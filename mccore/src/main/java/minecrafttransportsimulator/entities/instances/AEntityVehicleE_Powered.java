@@ -58,10 +58,20 @@ public abstract class AEntityVehicleE_Powered extends AEntityVehicleD_Moving {
     public double electricUsage;
     public double electricFlow;
     public String selectedBeaconName;
-    public String selectedWaypointIndex;
+    public String selectedWaypointIndex = "-1";//internal index, should not be used for get() from list
+    public String selectedWaypointListIndex = "-1";//use this to get selectedWaypoint from list
+    public String loopMode = "0";
     public NavBeacon selectedBeacon;
     public final String SELECTED_WAYPOINT_LIST_KEY = "selectedWaypoints";
     public final String WAYPOINT_ORDER_KEY = "WaypointOrder";
+    public final String SELECTED_WAYPOINT_INDEX_KEY = "selectedWaypointIndex";
+    public final String LOOP_MODE_KEY = "loopMode";
+
+    //For Flight plan
+    public List<NavWaypoint> selectedWaypointList = new ArrayList<>();
+    IWrapperNBT waypointData = InterfaceManager.coreInterface.getNewNBTWrapper();
+    IWrapperNBT SelectedIndexData =InterfaceManager.coreInterface.getNewNBTWrapper();
+    IWrapperNBT LoopModeData = InterfaceManager.coreInterface.getNewNBTWrapper();
 
 
 
@@ -85,10 +95,9 @@ public abstract class AEntityVehicleE_Powered extends AEntityVehicleD_Moving {
             this.selectedBeacon = NavBeacon.getByNameFromWorld(world, selectedBeaconName);
             this.fuelTank = new EntityFluidTank(world, data.getData("fuelTank"), definition.motorized.fuelCapacity);
 
-            //init selectedWaypoints
+            //init selectedWaypointList and selectedWaypoint
             try{
                 this.waypointData = data.getData(SELECTED_WAYPOINT_LIST_KEY);
-                this.selectedWaypointIndex = "-1";
                 if(this.waypointData != null){
                     IWrapperNBT waypointOrderData = data.getData(WAYPOINT_ORDER_KEY);
                     int ListIndex = 0;
@@ -97,12 +106,53 @@ public abstract class AEntityVehicleE_Powered extends AEntityVehicleD_Moving {
                         selectedWaypointList.add(NavWaypoint.getByIndexFromVehicle(this,Index,waypointData));
                         ListIndex++;
                     }
-
                 }else{
                     this.waypointData = InterfaceManager.coreInterface.getNewNBTWrapper();
                 }
             }catch (Exception e){
+                e.printStackTrace();
+            }
+            //init selectedWaypointIndex
+            try{
+                this.SelectedIndexData = data.getData(SELECTED_WAYPOINT_INDEX_KEY);
+                if(SelectedIndexData != null){
+                    this.selectedWaypointIndex = SelectedIndexData.getString("selectedWaypointIndex");
 
+                    //if selectedWaypointIndex is bigger than list size, change it to -1
+                    if(selectedWaypointList != null){
+                        if(selectedWaypointIndex.equals("-1")||NavWaypoint.getByIndexFromVehicle(this,selectedWaypointIndex,data) == null){
+                            selectedWaypointIndex = "-1";
+                            selectedWaypointListIndex = "-1";
+                            System.out.println("init:"+NavWaypoint.getByIndexFromVehicle(this,selectedWaypointIndex,data) == null);
+                        }
+                        //might need to optimize
+                        int index = 0;
+                        for(NavWaypoint waypoint:selectedWaypointList){
+                            if(selectedWaypointIndex.equals(waypoint.index)){
+                                selectedWaypointListIndex = Integer.toString(index);
+                                break;
+                            }
+                            index++;
+                        }
+                    }else{
+                        selectedWaypointIndex = "-1";
+                    }
+                }else{
+                    this.SelectedIndexData = InterfaceManager.coreInterface.getNewNBTWrapper();
+                }
+            }catch (Exception e){
+                e.printStackTrace();
+            }
+            //init loopMode
+            try{
+                this.LoopModeData = data.getData(LOOP_MODE_KEY);
+                if(LoopModeData != null){
+                    this.loopMode = LoopModeData.getString("loopMode");
+                }else{
+                    this.LoopModeData = InterfaceManager.coreInterface.getNewNBTWrapper();
+                }
+            }catch (Exception e){
+                e.printStackTrace();
             }
 
 
@@ -320,9 +370,8 @@ public abstract class AEntityVehicleE_Powered extends AEntityVehicleD_Moving {
 
 
 
-    //For Flight plan, selectedWaypoint should always be the last one of selectedWaypointList.
-    public List<NavWaypoint> selectedWaypointList = new ArrayList<>();
-    IWrapperNBT waypointData = InterfaceManager.coreInterface.getNewNBTWrapper();
+
+
 
     //Update selected waypoint state
     public void UpdateWaypointList(String operation,String opIndex,String index,String name,String targetSpeed,String bearing,String StrX,String StrY,String StrZ) {
@@ -469,7 +518,27 @@ public abstract class AEntityVehicleE_Powered extends AEntityVehicleD_Moving {
         }catch (Exception e){
             e.printStackTrace();
         }
-
+        //save selectedWaypointIndex
+        try{
+            //if selectedWaypointIndex is not in list, change it to -1
+            if(selectedWaypointIndex.equals("-1")||NavWaypoint.getByIndexFromVehicle(this,selectedWaypointIndex,data) == null){
+                selectedWaypointIndex = "-1";
+                System.out.println("save:"+NavWaypoint.getByIndexFromVehicle(this,selectedWaypointIndex,data) == null);
+            }
+            IWrapperNBT SelectedWaypointIndex = InterfaceManager.coreInterface.getNewNBTWrapper();
+            SelectedWaypointIndex.setString("selectedWaypointIndex",selectedWaypointIndex);
+            data.setData(SELECTED_WAYPOINT_INDEX_KEY,SelectedWaypointIndex);
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+        //save loopMode, now only includes 0/1 (false/true), maybe will be able to support more complex logic
+        try{
+            IWrapperNBT LoopMode = InterfaceManager.coreInterface.getNewNBTWrapper();
+            LoopMode.setString("loopMode",loopMode);
+            data.setData(LOOP_MODE_KEY,LoopMode);
+        }catch (Exception e){
+            e.printStackTrace();
+        }
 
 
         return data;
