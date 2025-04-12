@@ -13,9 +13,6 @@ import minecrafttransportsimulator.mcinterface.InterfaceManager;
 import minecrafttransportsimulator.packets.instances.*;
 
 import java.util.*;
-//TODO:Loop waypoint logic(drop a waypoint and switch to next one), although not all in this file
-// to get selectedWaypoint you can use:
-// NavWaypoint selectedWaypoint = vehicle.selectedWaypointList.get(Integer.parseInt(vehicle.selectedWaypointListIndex));
 
 public class GUIWaypointManager extends AGUIBase {
 
@@ -538,7 +535,7 @@ public class GUIWaypointManager extends AGUIBase {
         super.setStates();
         setStatesGlobal();
         if(vehicle != null)setStatesVehicle();
-        //TODO: update selectedWaypoint when it changes while GUI is on
+        //TODO: update selectedWaypoint when it changes while GUI is on?
     }
 
     /**

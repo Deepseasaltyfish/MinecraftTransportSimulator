@@ -12,6 +12,8 @@ import minecrafttransportsimulator.mcinterface.AWrapperWorld;
 import minecrafttransportsimulator.mcinterface.IWrapperNBT;
 import minecrafttransportsimulator.mcinterface.IWrapperPlayer;
 import minecrafttransportsimulator.mcinterface.InterfaceManager;
+import minecrafttransportsimulator.packets.instances.PacketVehicleWaypointSelect;
+import minecrafttransportsimulator.packets.instances.PacketVehicleWaypointSelectRequest;
 import minecrafttransportsimulator.systems.ConfigSystem;
 
 /**
@@ -632,16 +634,39 @@ public class EntityVehicleF_Physics extends AEntityVehicleE_Powered {
                     navILS();
                     setHeading();
                     setVerticalSpeed();
-                } else if (!selectedWaypointIndex.equals("-1")) {
-                    NavWaypoint waypoint = selectedWaypointList.get(Integer.parseInt(selectedWaypointIndex));
+                } else if (!selectedWaypointListIndex.equals("-1")) {
+                    NavWaypoint waypoint = selectedWaypointList.get(Integer.parseInt(selectedWaypointListIndex));
                     autopilotPositionX.setTo(waypoint.position.x, true);
                     autopilotPositionY.setTo(waypoint.position.y, true);
                     autopilotPositionZ.setTo(waypoint.position.z, true);
+
                     System.out.println("Going waypoint guided");
                     navGPS();
                     setHeading();
                     setAltitude();
                     setVerticalSpeed();
+
+                    //distance judging is temporary
+                    if(Math.abs(waypoint.position.x-this.position.x)*Math.abs(waypoint.position.x-this.position.x)+
+                            Math.abs(waypoint.position.y-this.position.y)*Math.abs(waypoint.position.y-this.position.y)+
+                            Math.abs(waypoint.position.z-this.position.z)*Math.abs(waypoint.position.z-this.position.z)
+                            <1000*1000){
+                        if(Integer.parseInt(this.selectedWaypointListIndex)+1>=this.selectedWaypointList.size()){
+                            if(loopMode.equals("0")){
+                                //TODO:need to handle GUI things when GUI is on
+                                InterfaceManager.packetInterface.sendToServer(new PacketVehicleWaypointSelect(this,"-1","-1",this.loopMode));
+                                InterfaceManager.packetInterface.sendToServer(new PacketVehicleWaypointSelectRequest(this,"-1","-1",this.loopMode));
+                            }else if(loopMode.equals("1")){
+                                String trueIndex = this.selectedWaypointList.get(0).index;
+                                InterfaceManager.packetInterface.sendToServer(new PacketVehicleWaypointSelect(this,trueIndex,"0",this.loopMode));
+                                InterfaceManager.packetInterface.sendToServer(new PacketVehicleWaypointSelectRequest(this,trueIndex,"0",this.loopMode));
+                            }
+                        }else{
+                            NavWaypoint nextWaypoint = this.selectedWaypointList.get(Integer.parseInt(this.selectedWaypointListIndex)+1);
+                            InterfaceManager.packetInterface.sendToServer(new PacketVehicleWaypointSelect(this,nextWaypoint.index,Integer.toString(Integer.parseInt(this.selectedWaypointListIndex)+1),this.loopMode));
+                            InterfaceManager.packetInterface.sendToServer(new PacketVehicleWaypointSelectRequest(this,nextWaypoint.index,Integer.toString(Integer.parseInt(this.selectedWaypointListIndex)+1),this.loopMode));
+                        }
+                    }
                 } else {
 //                    autopilotNavEnabledVar.setActive(false, true);
                     //TODO: this is potential bug where player use beacon nav first, change to waypoint then back to beacon, all without turning off nav mode
